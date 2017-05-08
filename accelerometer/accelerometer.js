@@ -16,37 +16,47 @@ var last_movement = 0.0;
 var last_movement_time = Date.now();
 var minutes;
 var moveCount = 0;
+var fork = '🍴'
+var snowman = '☃';
+var stop = '🚫';
 
 var sendText = require('./twilio');
 
 // Initialize the accelerometer
 accel.on('ready', function () {
-  sendText( number, twilio_num, "This text message was sent by Tessel.");
+  sendText( number, twilio_num, "You're eating with CheWWise. Bon Appetit! " + fork);
   // Stream accelerometer data
   accel.setOutputRate(1.56, function rateSet() {
     accel.setScaleRange( 8, function scaleSet() {
       accel.on('data', function (xyz) {
       		// tessel has moved
       		if (last_movement !== xyz[0].toFixed(1)) {
-      			moveCount++;
-      			console.log(moveCount);
-      			if (moveCount > 10) {
-      				console.log('Sent SMS: You are eating too fast!');
-      				sendText(number, twilio_num, 'You are eating too fast!');
-      				moveCount = 0;
+      			if (Math.abs(last_movement - xyz[0].toFixed(1)) > 0.1) {
+      				moveCount++;
       			}
-      			
       			last_movement = xyz[0].toFixed(1);
       			minutes = ((Date.now() - last_movement_time)/1000) / 60;
       			last_movement_time = Date.now();
+
+      			console.log('You have moved your fork ' + moveCount + ' times');
+      			if (moveCount > 10 && minutes < 0.1) {
+      				console.log('Sent SMS: WARNING: YOU ARE EATING TOO FAST!');
+      				sendText(number, twilio_num, 'WARNING: YOU ARE EATING TOO FAST! ' + stop);
+      				moveCount = 0;
+      			} else if (moveCount > 10) {
+      				moveCount = 0;
+      			}
+      			
       		// no movement
       		} else {
       			minutes = ((Date.now() - last_movement_time)/1000) / 60;
-      			console.log(minutes)
-      			if (minutes > 0.3) {
-      				sendText(number, twilio_num, 'Your food\'s getting cold!');
+      			// console.log(minutes)
+
+      			if (minutes > 0.1) {
       				console.log('Sent SMS: Your food\'s getting cold!')
+      				sendText(number, twilio_num, 'Your food\'s getting cold! ' + snowman);
       				minutes = 0;
+      				last_movement_time = Date.now();
       			}
       		}
         })
